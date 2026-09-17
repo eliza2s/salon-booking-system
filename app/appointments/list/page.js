@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import StatusSelect from '../../components/StatusSelect';
 
 export default function AppointmentListPage() {
   const [appointments, setAppointments] = useState([]);
@@ -106,16 +107,10 @@ export default function AppointmentListPage() {
                   <td className="py-4">{a.time}</td>
                   <td className="py-4">{a.status}</td>
                   <td className="py-4">
-                    <select
-                      className="border border-[#ddd9d2] px-2 py-1 bg-white text-sm outline-none focus:border-[#5f7161]"
+                    <StatusSelect
                       value={a.status}
-                      onChange={(e) => handleStatusChange(a.id, e.target.value)}
-                    >
-                      <option>Pending</option>
-                      <option>Confirmed</option>
-                      <option>Completed</option>
-                      <option>Cancelled</option>
-                    </select>
+                      onChange={(newStatus) => handleStatusChange(a.id, newStatus)}
+                    />
                   </td>
                   <td className="py-4 text-right">
                     <button

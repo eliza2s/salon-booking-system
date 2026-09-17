@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import ServiceForm from '../components/ServiceForm';
 
 export default function ServicesPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', price: '', duration: '' });
+  const [editingService, setEditingService] = useState(null);
 
   useEffect(() => {
     loadServices();
@@ -27,22 +28,33 @@ export default function ServicesPage() {
     }
   }
 
-  async function handleAdd(e) {
-    e.preventDefault();
+  async function handleAdd(values) {
     setError('');
     try {
       const res = await fetch('/api/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          price: parseFloat(form.price),
-          duration: parseInt(form.duration, 10),
-        }),
+        body: JSON.stringify(values),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to add service');
-      setForm({ name: '', price: '', duration: '' });
+      loadServices();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleUpdate(values) {
+    setError('');
+    try {
+      const res = await fetch(`/api/services/${editingService.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update service');
+      setEditingService(null);
       loadServices();
     } catch (err) {
       setError(err.message);
@@ -70,37 +82,13 @@ export default function ServicesPage() {
         </p>
       )}
 
-      <form onSubmit={handleAdd} className="flex flex-wrap gap-3 mb-10 pb-10 border-b border-[#ddd9d2]">
-        <input
-          className="border border-[#ddd9d2] px-3 py-2 flex-1 min-w-[160px] bg-white outline-none focus:border-[#5f7161]"
-          placeholder="Service name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <input
-          className="border border-[#ddd9d2] px-3 py-2 w-24 bg-white outline-none focus:border-[#5f7161]"
-          placeholder="Price"
-          type="number"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          required
-        />
-        <input
-          className="border border-[#ddd9d2] px-3 py-2 w-28 bg-white outline-none focus:border-[#5f7161]"
-          placeholder="Minutes"
-          type="number"
-          value={form.duration}
-          onChange={(e) => setForm({ ...form, duration: e.target.value })}
-          required
-        />
-        <button
-          className="bg-[#5f7161] text-white px-5 py-2 hover:bg-[#4c5c4e] transition-colors"
-          type="submit"
-        >
-          Add service
-        </button>
-      </form>
+      <ServiceForm
+        key={editingService ? editingService.id : 'new'}
+        initialValues={editingService}
+        onSubmit={editingService ? handleUpdate : handleAdd}
+        submitLabel={editingService ? 'Save changes' : 'Add service'}
+        onCancel={editingService ? () => setEditingService(null) : null}
+      />
 
       {loading ? (
         <p className="text-[#6b6862]">Loading…</p>
@@ -120,7 +108,13 @@ export default function ServicesPage() {
                 <td className="py-4">{s.name}</td>
                 <td className="py-4">NPR {s.price}</td>
                 <td className="py-4">{s.duration} min</td>
-                <td className="py-4 text-right">
+                <td className="py-4 text-right space-x-3">
+                  <button
+                    onClick={() => setEditingService(s)}
+                    className="text-[#5f7161] text-sm hover:underline"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => handleDelete(s.id)}
                     className="text-[#a6564f] text-sm hover:underline"
